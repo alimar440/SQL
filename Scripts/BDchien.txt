@@ -1,0 +1,171 @@
+
+chien male caniche nee avant 1 janvier 2090 et pas encore mort
+
+select numChien
+from chien 
+where (		
+			sexe = 'M' 
+		AND  
+			race = 'caniche'
+		AND 
+			dateDeces is NULL 
+		AND	
+			1990 > extract(year from dateNais)) ;
+
+nom et num des chiens qui ont participés a des concours en 1995 mais n'ont jamais eté classé en 1995
+
+select C1.numChien ,C1.nomChien
+from chien C1 ,concours C2 , participe P1 , estClasse E
+where (		
+		P1.numConcours = C2.numConcours  
+	and
+		P1.numChien = C1.numChien
+	and 
+		E.numChien = C1.numChien  
+	and 
+		extract(year from C2.dateConcours)=1995
+	and 
+		Not exists ( select * 
+					 from estClasse 
+				   	where 	
+				   		numConcours = C2.numConcours
+				   	and
+				   		numChien = C1.numChien)
+	);
+	
+5)chien nee apres la 01/01/1995 et qui on participer a au moins 3 concours
+
+resultat:
+ 
+num
+"CAN010"
+"CAN013"
+"CAN015"
+"CAN016"
+"CAN017"
+"CAN019"
+nom 
+"CAN010"	"idefix"
+"CAN013"	"wagadoudou"
+"CAN015"	"lulu"
+"CAN016"	"lolo"
+"CAN017"	"bouboule"
+"CAN019"	"bouboule"
+code :
+
+select distinct C1.numChien ,C1.nomChien , C1.dateNais 
+from chien C1 , participe P1 ,participe P2 ,participe P3
+where (		
+		P1.numConcours != P2.numConcours  
+	and
+		P2.numConcours != P3.numConcours
+	and 
+		P3.numConcours != P1.numConcours
+	and 
+		C1.dateNais != '01/01/1995'
+	and
+		extract(year from C1.dateNais) >= 1955
+	and
+		P1.numChien = C1.numChien
+	and
+		P2.numChien = C1.numChien
+	and
+		P3.numChien = C1.numChien
+) ;
+
+oubien 
+
+select distinct numChien ,nomChien , dateNais 
+from chien   
+where (		
+		 
+		dateNais != '01/01/1995'
+	and
+		extract(year from dateNais) >= 1955
+	and
+		numChien in (select numChien
+						 from participe
+						 group by numChien
+						 having count(numChien) >2
+						) 
+);
+
+6)les grand parents du chien MUF530
+
+resultat: 
+
+"MUF538"
+"MUF536"
+"MUF534"
+"MUF531"
+
+code :
+
+select P2.numParent as numgranparent
+from chien C1 
+inner join aPourParent P1 on C1.numChien = P1.numChiot 
+inner join aPourParent P2 on P1.numParent= P2.numChiot 
+where C1.numChien ='MUF530' ;
+
+7) donner les * de tous les petits fils du chien qui a gagné le concours de beaute d'orleans le 15/03/1946
+
+resultat:
+ 
+"SBER128"	"groumou "	"1992-11-10"
+
+code :
+select C1.numChien ,C1.nomChien , C1.dateNais
+from  chien C1
+inner join aPourParent A1 on A1.numChiot = C1.numChien
+where A1.numChiot = C1.numChien  and C1.sexe = 'M'
+and
+A1.numParent in (select numChiot
+from aPourParent
+where  
+		numParent = (select numChien
+                       from estClasse
+                       inner join concours on estClasse.numConcours = concours.numConcours
+                       where concours.lieu = 'orleans' 
+                         and concours.dateConcours = '15/03/1946'
+                         and classement = 1) 
+					)
+;
+
+8)chien(s) ayant participer au plus grand nombre de concours
+
+resultat: 
+"CAN015"	6
+
+code :
+
+select distinct numChien , count (*) as nombre_participation
+from participe
+group by numChien
+having count(*)>= ALL(select count(*)
+					  from participe 
+					  group by numChien) ;
+
+9)chien(s) ayant participer au plus grand nombre de concours en 1997
+
+resultat: 
+
+"CAN013"	1
+"CAN015"	1
+"CAN017"	1
+"CAN019"	1
+
+code :
+
+SELECT DISTINCT P1.numChien, COUNT(P1.numChien) AS nombre_participation
+FROM participe AS P1
+INNER JOIN concours AS C1 ON C1.numConcours = P1.numConcours
+WHERE EXTRACT(YEAR FROM C1.dateConcours) = 1997
+GROUP BY P1.numChien
+HAVING COUNT(*) >= ALL (
+    SELECT COUNT(*)
+    FROM participe AS P2
+    INNER JOIN concours AS C2 ON C2.numConcours = P2.numConcours
+    WHERE EXTRACT(YEAR FROM C2.dateConcours) = 1997
+    GROUP BY P2.numChien
+);
+

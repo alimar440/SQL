@@ -1,0 +1,94 @@
+select idd,(select min(note) 
+				 from passage
+				 where p.idel=idel),(select sum(bareme)
+				                      from contenu
+				                       where p.idd=idd
+				                      ) as total_devoir,note/(select sum(bareme)
+				                              from contenu
+				                               where p.idd=idd
+				                               )*100 as quotient
+				      
+from passage p inner join eleve e on p.idel=e.idel 
+where nom='DUPONT'
+   and 
+      prenom='ARNAUD'
+   and note in (select min(note) 
+				 from passage
+				 where p.idel=idel)
+	  
+	 
+select idd,note,(select sum(bareme)
+				 from contenu
+				 where p.idd=idd
+				       ) as total_devoir,note/(select sum(bareme)
+				                              from contenu
+				                               where p.idd=idd
+				                               )*100 as quotient
+from passage p inner join eleve e on p.idel=e.idel 
+where nom='DUPONT'
+      and 
+      prenom='ARNAUD'
+	  and
+	  not exists(select *
+				 from passage
+				 where p.idel=idel
+				 and
+			     	 nom='DUPONT'
+                 and 
+                     prenom='ARNAUD'
+				 and 
+				       note<p.note)
+					   
+select nom ,prenom,avg(note)
+from eleve e inner join passage p on e.idel=p.idel
+group by p.idel,nom,prenom
+
+select *
+from prof
+where idp in (select prof_createur
+			  from devoir
+			  group by prof_createur
+			  having count(*)>=all(select count(*) select *
+			                       from devoir   
+			                       group by prof_createur
+			                       ))
+								   
+select distinct idd as ID_devoir
+from contenu c
+where not exists (select *
+				  from niveau 
+				  where niveau not in (select niveau 
+									   from exercice e inner join contenu co
+									      on co.idex=e.idex
+									   where c.idd=idd))
+									   
+select distinct idd as ID_devoir 
+from contenu c
+where not exists (select * from contenu
+				  from exercice e1
+				  where contenu like '%triple%'
+				  and
+				    e1.idex not in (select e.idex 
+									   from exercice e inner join contenu co
+									      on co.idex=e.idex
+									   where c.idd=idd))
+									   
+									   
+									   
+select distinct idd
+from contenu c
+where not exists (select *
+				  from exercice e inner join contenu co
+				                on e.idex=co.idex
+				  where co.idd= c.idd
+				  and
+				  e.idex not in (select idex
+								 from exercice
+								 where contenu like '%laye%'))
+								 
+								 
+select distinct p.idp,p.nom,p.annee_naissance,p.ville
+from devoir d inner join prof p 
+      on d.prof_createur=p.idp
+	  inner join passage pa on d.idd=pa.idd
+where date_passage=date_creation+1
